@@ -1,14 +1,20 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.fabricmc.loom.task.RemapJarTask
+import net.fabricmc.loom.task.RunClientTask
+import net.fabricmc.loom.task.RunServerTask
+
+buildscript {
+    dependencies {
+        classpath fileTree(dir: "libs", include: "fabric-loom-0.7.local.jar")
+    }
+}
 
 plugins {
     id 'maven-publish'
-    id 'com.github.johnrengelman.shadow' version '7.1.2'
     id 'fabric-loom' version "0.7-SNAPSHOT"
 }
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
+downloadAssets.enabled = false
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -51,8 +57,10 @@ dependencies {
     implementation "org.lwjgl.lwjgl:lwjgl-platform:${lwjglVersion}"
 
     implementation fileTree(dir: "libs", include: "**.zip")
-    compileOnly fileTree(dir: "BTW_dev", include: "**.jar")
-    runtimeClasspath fileTree(dir: "BTW_dev", include: "**.jar")
+    compileOnly fileTree(dir: "$projectDir/BTW_dev", include: "*.zip")
+    compileOnly fileTree(dir: "$buildDir/BTW_dev", include: "**.jar")
+
+    runtimeClasspath fileTree(dir: "$buildDir/dev_run", include: "dev.jar")
 
     mappings fileTree(dir: "custom_mappings", include: "**.zip")
     modImplementation("io.github.minecraft-cursed-legacy:cursed-fabric-loader:${loader_version}") {
@@ -61,7 +69,7 @@ dependencies {
 }
 
 configurations {
-    btwCompileClasspath.extendsFrom mainCompileClasspath, implementation
+    btwCompileClasspath.extendsFrom implementation, modImplementation
 }
 
 configurations.all {
@@ -86,12 +94,41 @@ tasks.withType(JavaCompile).configureEach {
     if (JavaVersion.current().isJava9Compatible()) it.options.release = 8
 }
 
+loom {
+    runs {
+        client {
+            vmArgs "-Dfabric.development=true"
+            vmArgs "-Dmixin.debug.verbose=true"
+        }
+    }
+}
+
 java {
     withSourcesJar()
 }
 
-shadowJar {
-    from jar.outputs.files
+compileJava {
+    dependsOn('btwJar')
+}
+
+task devPackMod(type:Copy) {
+    dependsOn('jar')
+    from sourceSets.main.output.classesDirs
+    into file("$buildDir/classes/java/btw")
+}
+
+task devPackBTW(type:Copy) {
+    dependsOn('devPackMod')
+    dependsOn('btwJar')
+}
+
+task devPackRun(type:Jar) {
+    dependsOn('devPackBTW')
+    from fileTree("$buildDir/classes/java/btw")
+    from fileTree("$projectDir/BTW_dev/")
+    from sourceSets.btw.output.resourcesDir
+    destinationDirectory = file("$buildDir/dev_run")
+    archiveFileName = "dev.jar"
 }
 
 jar {
@@ -103,34 +140,46 @@ jar {
 }
 
 task btwJar(type:Jar) {
+    from fileTree("$projectDir/BTW_dev/")
     from sourceSets.btw.output.resourcesDir
     from sourceSets.btw.output.classesDirs
-    destinationDirectory = file("$rootDir/BTW_dev")
+    destinationDirectory = file("$buildDir/BTW_dev")
     archiveFileName = "BTW_dev.jar"
-}
-
-task shadowBtwJar(type:ShadowJar) {
-    from btwJar.outputs.files
-}
-
-task remapBtwJar(type:RemapJarTask) {
-    addNestedDependencies = false
-    dependsOn(btwJar)
-    input.set btwJar.archiveFile.get()
-    destinationDirectory = file("$rootDir/BTW_release")
-    archiveFileName = "BTW.jar"
-}
-
-task remapBtwJarShadow(type:RemapJarTask) {
-    addNestedDependencies = true
-    dependsOn(shadowBtwJar)
-    input.set shadowBtwJar.archiveFile.get()
-    destinationDirectory = file("$rootDir/BTW_release")
-    archiveFileName = "BTW_shadow.jar"
 }
 
 remapJar {
     dependsOn(jar)
     input.set jar.archiveFile.get()
     destinationDirectory = file("$rootDir/release")
+}
+
+reobfuscateJar {
+    dependsOn(jar)
+    input.set jar.archiveFile.get()
+    destinationDirectory = file("$rootDir/reobfuscated")
+}
+
+task safeRunClient(type:RunClientTask) {
+    mustRunAfter('clean')
+    dependsOn('clean')
+    dependsOn('devPackRun')
+}
+
+task safeRunServer(type:RunServerTask) {
+    mustRunAfter('clean')
+    dependsOn('clean')
+    dependsOn('devPackRun')
+}
+
+runClient {
+    dependsOn('devPackRun')
+}
+
+runServer {
+    dependsOn('devPackRun')
+}
+
+clean.doFirst {
+    delete "$buildDir/dev_run"
+    delete "$buildDir/BTW_dev"
 }
