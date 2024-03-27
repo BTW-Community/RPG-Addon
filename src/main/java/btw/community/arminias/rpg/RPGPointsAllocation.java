@@ -147,6 +147,10 @@ public class RPGPointsAllocation {
         }
     }
 
+    public static int getMinStatValue(int stat) {
+        return statMinValues[stat];
+    }
+
     public void set(int index, int value) {
         points[index] = value;
     }

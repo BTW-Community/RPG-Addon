@@ -12,11 +12,17 @@ public class GuiRPGStats extends GuiScreen {
 
     private RPGPointsAllocation allocation;
     private RPGStatsSurrogate stats;
+    private boolean inGame = false;
 
     public GuiRPGStats(GuiScreen guiScreen, RPGPointsAllocation allocation) {
         this.parentScreen = guiScreen;
         this.allocation = allocation;
         this.stats = new RPGStatsSurrogate(this.allocation);
+    }
+
+    public GuiRPGStats(GuiScreen guiScreen, RPGPointsAllocation allocation, boolean inGame) {
+        this(guiScreen, allocation);
+        this.inGame = inGame;
     }
 
     public void initGui() {
@@ -62,6 +68,9 @@ public class GuiRPGStats extends GuiScreen {
         if (guibutton.id == 0) {
             RPGAddon.pointsAllocation = allocation;
             this.mc.displayGuiScreen(this.parentScreen);
+            if (inGame) {
+                RPGAddon.sendStatAllocationToServer(allocation, true);
+            }
         } else {
             int i = guibutton.id - 1;
             if (i < RPGPointsAllocation.NUM_STATS) {

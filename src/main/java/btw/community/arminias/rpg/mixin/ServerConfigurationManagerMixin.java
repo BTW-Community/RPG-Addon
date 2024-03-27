@@ -26,4 +26,9 @@ public class ServerConfigurationManagerMixin {
             par2EntityPlayerMP.foodStats.setFoodLevel(Integer.MAX_VALUE);
         }
     }
+
+    @Inject(method = "transferPlayerToDimension", at = @At("RETURN"))
+    private void transferPlayerToDimension(EntityPlayerMP par1EntityPlayerMP, int par2, CallbackInfo ci) {
+        RPGAddon.sendStatAllocationToPlayer(par1EntityPlayerMP.playerNetServerHandler, par1EntityPlayerMP);
+    }
 }

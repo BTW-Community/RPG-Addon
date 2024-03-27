@@ -27,20 +27,10 @@ public abstract class NetClientHandlerMixin {
     private void handleLoginInject(Packet1Login par1Packet1Login, CallbackInfo ci) {
         if (RPGAddon.pointsAllocation != null && ((RPGStats) this.mc.thePlayer).getAllocation() == null) {
             //2
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream dataStream = new DataOutputStream(byteStream);
-            RPGAddon.pointsAllocation.writeToOutputStream(dataStream);
-            Packet250CustomPayload packet = new Packet250CustomPayload("RPG|StatsS", byteStream.toByteArray());
-            this.addToSendQueue(packet);
-            ((RPGStats) this.mc.thePlayer).doReinit(RPGAddon.pointsAllocation);
+            RPGAddon.sendStatAllocationToServer(RPGAddon.pointsAllocation, false);
         } else if (RPGAddon.pointsAllocation == null && ((RPGStats) this.mc.thePlayer).getAllocation() == null) {
             //2
-            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-            DataOutputStream dataStream = new DataOutputStream(byteStream);
-            RPGPointsAllocation.defaultAllocation(RPGPointsAllocation.DEFAULT_POINTS).writeToOutputStream(dataStream);
-            Packet250CustomPayload packet = new Packet250CustomPayload("RPG|StatsS", byteStream.toByteArray());
-            this.addToSendQueue(packet);
-            ((RPGStats) this.mc.thePlayer).doReinit(RPGPointsAllocation.defaultAllocation(RPGPointsAllocation.DEFAULT_POINTS));
+            RPGAddon.sendStatAllocationToServer(RPGPointsAllocation.defaultAllocation(RPGPointsAllocation.DEFAULT_POINTS), false);
         }
     }
 }

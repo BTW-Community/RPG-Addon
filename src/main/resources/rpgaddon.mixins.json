@@ -4,6 +4,7 @@
   "package": "btw.community.arminias.rpg.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "EntityMixin",
     "EntityPlayerMixin",
     "FoodStatsMixin",
     "GuiCreateWorldMixin",

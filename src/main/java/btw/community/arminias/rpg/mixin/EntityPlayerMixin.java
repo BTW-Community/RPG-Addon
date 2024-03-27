@@ -19,6 +19,7 @@ import java.util.ArrayList;
 public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats {
     @Shadow public PlayerCapabilities capabilities;
     @Shadow public FoodStats foodStats;
+    private boolean statsDirty = false;
 
     @Shadow public abstract int getMaxHealth();
 
@@ -33,12 +34,15 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
 
     @Override
     public void doReinit(RPGPointsAllocation points) {
+        if ((Object) this instanceof EntityPlayerMP) {
+            statsDirty = true;
+        }
         this.pointsAllocation = points;
-        this.health = Math.min((int) getModifiedMaxHealth(), this.health);
+        this.health = Math.max(Math.min((int) getModifiedMaxHealth(), this.health), 0);
         ((PlayerCapabilitiesAccessor)capabilities).setWalkSpeed(getMovementSpeedModifier());
         ((FoodStatsExtension) foodStats).setPlayer((EntityPlayer) (Object) this);
         foodStats.setFoodLevel((int) (
-                Math.min(getModifiedMaxShanks(), foodStats.getFoodLevel())
+                Math.max(Math.min(getModifiedMaxShanks(), foodStats.getFoodLevel()), 0)
         ));
     }
 
@@ -55,6 +59,23 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
         ((FoodStatsExtension) foodStats).setPlayer((EntityPlayer) (Object) this);
         foodStats.setFoodLevel((int) (getModifiedMaxShanks()));
     }*/
+
+    @Inject(method = "onUpdate", at = @At("HEAD"))
+    private void onUpdate(CallbackInfo ci) {
+        if (statsDirty && pointsAllocation != null) {
+            statsDirty = false;
+            for (int i = 0; i < RPGPointsAllocation.NUM_STATS; i++) {
+                int points = pointsAllocation.getStatValue(i);
+                if (points < RPGPointsAllocation.getMinStatValue(i)) {
+                    pointsAllocation = RPGPointsAllocation.defaultAllocation(pointsAllocation.getTotalPoints());
+                    if ((Object) this instanceof EntityPlayerMP) {
+                        RPGAddon.sendStatAllocationScreenToPlayer((EntityPlayerMP) (Object) this);
+                    }
+                    break;
+                }
+            }
+        }
+    }
 
     @Inject(method = "getMaxHealth", at = @At("RETURN"), cancellable = true)
     private void getMaxHealth(CallbackInfoReturnable<Integer> cir) {
