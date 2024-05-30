@@ -8,6 +8,7 @@ import btw.util.status.StatusEffect;
 import net.minecraft.src.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -16,14 +17,16 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.ArrayList;
 
 @Mixin(EntityPlayer.class)
-public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats {
+public abstract class EntityPlayerMixin extends EntityLivingBase implements RPGStats {
     @Shadow public PlayerCapabilities capabilities;
     @Shadow public FoodStats foodStats;
+    @Unique
     private boolean statsDirty = false;
 
-    @Shadow public abstract int getMaxHealth();
 
-    private int cachedHealth = 0;
+    @Unique
+    private float cachedHealth = 0;
+    @Unique
     private int cachedShanks = 0;
 
     private RPGPointsAllocation pointsAllocation = null;
@@ -38,7 +41,8 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
             statsDirty = true;
         }
         this.pointsAllocation = points;
-        this.health = Math.max(Math.min((int) getModifiedMaxHealth(), this.health), 0);
+        this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setAttribute(getModifiedMaxHealth());
+        this.setHealth(Math.max(Math.min((int) getModifiedMaxHealth(), this.getHealth()), 0));
         ((PlayerCapabilitiesAccessor)capabilities).setWalkSpeed(getMovementSpeedModifier());
         ((FoodStatsExtension) foodStats).setPlayer((EntityPlayer) (Object) this);
         foodStats.setFoodLevel((int) (
@@ -70,6 +74,7 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
                     pointsAllocation = RPGPointsAllocation.defaultAllocation(pointsAllocation.getTotalPoints());
                     if ((Object) this instanceof EntityPlayerMP) {
                         RPGAddon.sendStatAllocationScreenToPlayer((EntityPlayerMP) (Object) this);
+                        this.getEntityAttribute(SharedMonsterAttributes.maxHealth).setAttribute(getModifiedMaxHealth());
                     }
                     break;
                 }
@@ -77,22 +82,24 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
         }
     }
 
-    @Inject(method = "getMaxHealth", at = @At("RETURN"), cancellable = true)
+    /*@Inject(method = "getMaxHealth", at = @At("RETURN"), cancellable = true)
     private void getMaxHealth(CallbackInfoReturnable<Integer> cir) {
         cir.setReturnValue((int) (getModifiedMaxHealth()));
-    }
+    }*/
 
     @Inject(method = "getStatusForCategory", at = @At("HEAD"))
     private void getAllActiveStatusEffects(CallbackInfoReturnable<ArrayList<StatusEffect>> cir) {
-        this.cachedHealth = this.health;
+        this.cachedHealth = this.getHealth();
         this.cachedShanks = this.foodStats.getFoodLevel();
-        this.health = (int) getNormalizedHealth();
+        this.getDataWatcher().updateObject(6, getNormalizedHealth());
+        //this.setHealth(getNormalizedHealth());
         this.foodStats.setFoodLevel((int) ((60F / Math.min(getModifiedMaxShanks(), 60F)) * this.foodStats.getFoodLevel()));
     }
 
     @Inject(method = "getStatusForCategory", at = @At("RETURN"))
     private void getAllActiveStatusEffectsReturn(CallbackInfoReturnable<ArrayList<StatusEffect>> cir) {
-        this.health = this.cachedHealth;
+        this.getDataWatcher().updateObject(6, this.cachedHealth);
+        //this.setHealth(this.cachedHealth);
         this.foodStats.setFoodLevel(this.cachedShanks);
     }
 
@@ -130,10 +137,10 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
             this.pointsAllocation = ((RPGStats) otherPlayer).getAllocation();
             this.doReinit(pointsAllocation);
             if (playerLeavingTheEnd) {
-                this.health = otherPlayer.health;
+                this.setHealth(otherPlayer.getHealth());
                 this.foodStats = otherPlayer.foodStats;
             } else {
-                this.health = (int) getModifiedMaxHealth();
+                this.setHealth(getModifiedMaxHealth());
                 this.foodStats.setFoodLevel((int) getModifiedMaxShanks());
             }
         }
@@ -159,6 +166,6 @@ public abstract class EntityPlayerMixin extends EntityLiving implements RPGStats
 
     // Gets health normalized to 0-20
     private float getNormalizedHealth() {
-        return (20F / Math.min(getMaxHealth(), 20F)) * this.health;
+        return (20F / Math.min(getMaxHealth(), 20F)) * this.getHealth();
     }
 }

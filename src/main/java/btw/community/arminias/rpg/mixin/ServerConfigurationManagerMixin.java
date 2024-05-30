@@ -1,10 +1,7 @@
 package btw.community.arminias.rpg.mixin;
 
 import btw.community.arminias.rpg.RPGAddon;
-import net.minecraft.src.EntityPlayerMP;
-import net.minecraft.src.INetworkManager;
-import net.minecraft.src.NBTTagCompound;
-import net.minecraft.src.ServerConfigurationManager;
+import net.minecraft.src.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -22,7 +19,7 @@ public class ServerConfigurationManagerMixin {
     @Inject(method = "initializeConnectionToPlayer", at = @At("RETURN"), locals = LocalCapture.CAPTURE_FAILHARD)
     private void initializeConnectionToPlayer(INetworkManager par1INetworkManager, EntityPlayerMP par2EntityPlayerMP, CallbackInfo ci, NBTTagCompound var3) {
         if (var3 == null) {
-            par2EntityPlayerMP.health = Integer.MAX_VALUE;
+            par2EntityPlayerMP.getDataWatcher().updateObject(6, Float.MAX_VALUE);
             par2EntityPlayerMP.foodStats.setFoodLevel(Integer.MAX_VALUE);
         }
     }

@@ -1,9 +1,10 @@
 package btw.community.arminias.rpg.mixin;
 
 import btw.community.arminias.rpg.RPGStats;
-import net.minecraft.client.Minecraft;
+
 import net.minecraft.src.GuiIngame;
 import net.minecraft.src.MathHelper;
+import net.minecraft.src.Minecraft;
 import net.minecraft.src.ScaledResolution;
 import org.spongepowered.asm.mixin.Debug;
 import org.spongepowered.asm.mixin.Final;
@@ -44,11 +45,11 @@ public abstract class GuiIngameMixin {
         times_added = 0;
     }
 
-    @ModifyConstant(method = "renderGameOverlay", constant = @Constant(intValue = 10, ordinal = 0),
+    /*@ModifyConstant(method = "func_110327_a", constant = @Constant(intValue = 8, ordinal = 0),
             slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/src/Profiler;endStartSection(Ljava/lang/String;)V", ordinal = 0)))
     private int modifyHealthOverlay(int original) {
         return Math.max((int) (((RPGStats)mc.thePlayer).getModifiedMaxHealth() / 2F), original);
-    }
+    }*/
 
     @Shadow
     public abstract void renderGameOverlay(float par1, boolean par2, int par3, int par4);
@@ -60,9 +61,9 @@ public abstract class GuiIngameMixin {
     }
 
 
-    @ModifyVariable(method = "renderGameOverlay",
+    @ModifyVariable(method = "func_110327_a",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/src/WorldInfo;isHardcoreModeEnabled()Z"),
-            name = "var29",
+            name = "var27",
             print = false,
             slice = @Slice(
                     from = @At(value = "INVOKE", target = "Lnet/minecraft/src/Profiler;endStartSection(Ljava/lang/String;)V", ordinal = 0),
@@ -73,7 +74,7 @@ public abstract class GuiIngameMixin {
         return original - (times_added / 10) * 10;
     }
 
-    @ModifyVariable(method = "renderGameOverlay",
+    /*@ModifyVariable(method = "func_110327_a",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/src/WorldInfo;isHardcoreModeEnabled()Z"),
             name = "var28",
             print = false,
@@ -84,9 +85,9 @@ public abstract class GuiIngameMixin {
             ))
     private int modifyHealthOverlay3(int original) {
         return times_added >= (int) (((RPGStats) mc.thePlayer).getModifiedMaxHealth() / 2F) ? renderWidth : original - (times_added++ / 10) * 80;
-    }
+    }*/
 
-    @ModifyVariable(method = "renderGameOverlay",
+    /*@ModifyVariable(method = "renderGameOverlay",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/src/WorldInfo;isHardcoreModeEnabled()Z"),
             name = "var23",
             print = false,
@@ -97,9 +98,9 @@ public abstract class GuiIngameMixin {
             ))
     private int modifyHealthOverlay4(int original) {
         return times_added >= 10 ? 0 : original;
-    }
+    }*/
 
-    @ModifyVariable(method = "renderGameOverlay",
+    /*@ModifyVariable(method = "renderGameOverlay",
             at = @At(value = "INVOKE", target = "Lnet/minecraft/src/EntityClientPlayerMP;getTotalArmorValue()I"),
             name = "var22",
             print = false)
@@ -108,9 +109,9 @@ public abstract class GuiIngameMixin {
         // Ceil i to next larger multiple of 10
         i = (i + 9) / 10 * 10;
         return original - i;
-    }
+    }*/
 
-    @Inject(method = "renderGameOverlay", at = @At(value = "INVOKE", target = "Lnet/minecraft/src/Profiler;endStartSection(Ljava/lang/String;)V", ordinal = 1))
+    @Inject(method = "func_110327_a", at = @At(value = "INVOKE", target = "Lnet/minecraft/src/Profiler;endStartSection(Ljava/lang/String;)V", ordinal = 1))
     private void resetTimesAdded2(CallbackInfo ci) {
         times_added = 0;
     }

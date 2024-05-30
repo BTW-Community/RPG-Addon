@@ -1,8 +1,8 @@
 package btw.community.arminias.rpg;
 
+
 import btw.AddonHandler;
 import btw.BTWAddon;
-import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.src.*;
 
@@ -36,20 +36,20 @@ public class RPGAddon extends BTWAddon {
     public static final float BLOCK_BREAK_SPEED_PER_POINT = 0.0413745f;
 
 
-    private RPGAddon() {
-        super("RPG Addon", "0.3.0", "RPG");
+    public RPGAddon() {
+        super();
     }
 
     @Override
     public void initialize() {
         AddonHandler.logMessage(this.getName() + " Version " + this.getVersionString() + " Initializing...");
-        registerPacketHandler("RPG|StatsC", packet -> {
+        registerPacketHandler("rpg|StatsC", packet -> {
             // 1.5
             // Client-Side: You get a packet with the stats of the player
             DataInputStream data = new DataInputStream(new ByteArrayInputStream(packet.data));
             ((RPGStats) Minecraft.getMinecraft().thePlayer).doReinit(new RPGPointsAllocation(data));
         });
-        registerPacketHandler("RPG|Screen", packet -> {
+        registerPacketHandler("rpg|Screen", packet -> {
             // Client-Side: You get a packet to open the stats screen
             EntityPlayer player;
             Minecraft.getMinecraft().displayGuiScreen(new GuiRPGStats(Minecraft.getMinecraft().currentScreen,
@@ -64,20 +64,21 @@ public class RPGAddon extends BTWAddon {
 
             @Override
             public String getCommandUsage(ICommandSender par1ICommandSender) {
-                return super.getCommandUsage(par1ICommandSender) + " <player>";
+                return "/resetrpgstats <player>";
             }
 
             @Override
             public void processCommand(ICommandSender var1, String[] var2) {
                 if (var2.length == 1) {
-                    EntityPlayerMP player = func_82359_c(var1, var2[0]);
+                    EntityPlayerMP player = getPlayer(var1, var2[0]);
                     RPGStats stats = (RPGStats) player;
                     stats.doReinit(RPGPointsAllocation.defaultAllocation(RPGPointsAllocation.DEFAULT_POINTS));
-                    player.setEntityHealth((int) Math.min(player.getHealth(), stats.getModifiedMaxHealth()));
+                    player.getEntityAttribute(SharedMonsterAttributes.maxHealth).setAttribute(stats.getModifiedMaxHealth());
+                    player.setHealth(Math.min(player.getHealth(), stats.getModifiedMaxHealth()));
                     player.foodStats.setFoodLevel((int) Math.min(player.foodStats.getFoodLevel(), stats.getModifiedMaxShanks()));
                     sendStatAllocationToPlayer(player.playerNetServerHandler, player);
-                    player.sendChatToPlayer("Your stats have been reset.");
-                    var1.sendChatToPlayer("Stats for " + player.getEntityName() + " have been reset.");
+                    player.sendChatToPlayer(ChatMessageComponent.createFromText("Your stats have been reset."));
+                    var1.sendChatToPlayer(ChatMessageComponent.createFromText("Stats for " + player.getEntityName() + " have been reset."));
                     sendStatAllocationScreenToPlayer(player);
                 } else {
                     throw new WrongUsageException(getCommandUsage(var1), new Object[0]);
@@ -93,21 +94,22 @@ public class RPGAddon extends BTWAddon {
     }
 
     public static void sendStatAllocationScreenToPlayer(EntityPlayerMP player) {
-        Packet250CustomPayload packet = new Packet250CustomPayload("RPG|Screen", new byte[0]);
+        Packet250CustomPayload packet = new Packet250CustomPayload("rpg|Screen", new byte[0]);
         player.playerNetServerHandler.sendPacketToPlayer(packet);
     }
 
     @Override
     public boolean serverCustomPacketReceived(NetServerHandler handler, Packet250CustomPayload packet) {
         //2.5
-        if (packet.channel.startsWith("RPG|StatsS")) {
+        if (packet.channel.startsWith("rpg|StatsS")) {
             DataInputStream data = new DataInputStream(new ByteArrayInputStream(packet.data));
             RPGPointsAllocation points = new RPGPointsAllocation(data);
             RPGStats stats = (RPGStats) handler.playerEntity;
             if (stats != null && (stats.getAllocation() == null || packet.channel.endsWith("1"))) {
                 stats.doReinit(points);
-                handler.playerEntity.setEntityHealth(
-                        (int) Math.min(handler.playerEntity.getHealth(), stats.getModifiedMaxHealth())
+                handler.playerEntity.getEntityAttribute(SharedMonsterAttributes.maxHealth).setAttribute(stats.getModifiedMaxHealth());
+                handler.playerEntity.setHealth(
+                        Math.min(handler.playerEntity.getHealth(), stats.getModifiedMaxHealth())
                 );
                 handler.playerEntity.foodStats.setFoodLevel(
                         (int) Math.min(handler.playerEntity.foodStats.getFoodLevel(), stats.getModifiedMaxShanks())
@@ -132,7 +134,7 @@ public class RPGAddon extends BTWAddon {
             DataOutputStream dataStream = new DataOutputStream(byteStream);
             stats.getAllocation().writeToOutputStream(dataStream);
             byte[] data = byteStream.toByteArray();
-            Packet250CustomPayload packet = new Packet250CustomPayload("RPG|StatsC", data);
+            Packet250CustomPayload packet = new Packet250CustomPayload("rpg|StatsC", data);
             serverHandler.sendPacketToPlayer(packet);
         }
     }
@@ -141,7 +143,7 @@ public class RPGAddon extends BTWAddon {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutputStream dataStream = new DataOutputStream(byteStream);
         pointsAllocation.writeToOutputStream(dataStream);
-        Packet250CustomPayload returnPacket = new Packet250CustomPayload("RPG|StatsS" + (force ? "1" : ""), byteStream.toByteArray());
+        Packet250CustomPayload returnPacket = new Packet250CustomPayload("rpg|StatsS" + (force ? "1" : ""), byteStream.toByteArray());
         Minecraft.getMinecraft().getNetHandler().addToSendQueue(returnPacket);
         ((RPGStats) Minecraft.getMinecraft().thePlayer).doReinit(pointsAllocation);
     }
