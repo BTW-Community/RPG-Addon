@@ -43,13 +43,13 @@ public class RPGAddon extends BTWAddon {
     @Override
     public void initialize() {
         AddonHandler.logMessage(this.getName() + " Version " + this.getVersionString() + " Initializing...");
-        registerPacketHandler("rpg|StatsC", packet -> {
+        registerPacketHandler("rpg|StatsC", (packet, player_) -> {
             // 1.5
             // Client-Side: You get a packet with the stats of the player
             DataInputStream data = new DataInputStream(new ByteArrayInputStream(packet.data));
             ((RPGStats) Minecraft.getMinecraft().thePlayer).doReinit(new RPGPointsAllocation(data));
         });
-        registerPacketHandler("rpg|Screen", packet -> {
+        registerPacketHandler("rpg|Screen", (packet, player_) -> {
             // Client-Side: You get a packet to open the stats screen
             EntityPlayer player;
             Minecraft.getMinecraft().displayGuiScreen(new GuiRPGStats(Minecraft.getMinecraft().currentScreen,

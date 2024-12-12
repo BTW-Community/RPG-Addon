@@ -34,7 +34,7 @@ loom {
 	setIntermediaryUrl('https://maven.legacyfabric.net/net/legacyfabric/intermediary/%1$s/intermediary-%1$s-v2.jar');
 	//accessWidenerPath = file('src/main/resources/<NAME>.accesswidener')
 	addMinecraftJarProcessor(
-			BTWJarReplacer, projectDir.toString()
+			BTWJarReplacer, "BTWJarReplacer", projectDir.toString()
 	)
 }
 
@@ -61,8 +61,6 @@ dependencies {
 
 	// This is what MC 1.6 uses
 	implementation 'com.google.code.gson:gson:2.2.2'
-
-	implementation group: 'it.unimi.dsi', name: 'fastutil', version: '8.5.12'
 }
 
 configurations.all {
@@ -116,43 +114,54 @@ runServer {
 }
 
 class BTWJarReplacer implements MinecraftJarProcessor<Spec> {
-	String path;
+	String name
+	String path
 
 	@javax.inject.Inject
-	BTWJarReplacer(String path) {
-		super()
+	BTWJarReplacer(String name, String path) {
+		this.name = name
 		this.path = path
 	}
 
 	@Override
 	Spec buildSpec(SpecContext context) {
-		return new Spec() {
-			@Override
-			int hashCode() {
-				return super.hashCode()
-			}
-		}
+		return new Spec(path)
 	}
 
 	@Override
 	void processJar(java.nio.file.Path jar, Spec spec, ProcessorContext context) throws IOException {
 		// Replace the Minecraft jar with the custom one from BTW_dev.
 		// This is just a straight up file replacement, no remapping or anything.
-		if (!Files.exists(Paths.get(path, "build/BTW_dev/BTW_dev.zip"))) {
+		if (!Files.exists(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip"))) {
 			// Print a warning if the BTW_dev zip doesn't exist.
 			System.err.println("BTW_dev zip not found, skipping BTWJarReplacer")
 		} else {
-			Files.copy(Paths.get(path, "build/BTW_dev/BTW_dev.zip"), jar, StandardCopyOption.REPLACE_EXISTING)
+			System.out.println("BTW_dev zip found, replacing Minecraft jar with BTW_dev jar.")
+			Files.copy(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip"), jar, StandardCopyOption.REPLACE_EXISTING)
 			// Add Javadocs
-			Files.copy(Paths.get(path, "build/BTW_dev/BTW_dev-javadoc.jar"), jar.resolveSibling(jar.getFileName().toString().replace(".jar", "-javadoc.jar")), StandardCopyOption.REPLACE_EXISTING)
+			Files.copy(Paths.get(path, "build_BTW/BTW_dev/BTW_dev-javadoc.jar"), jar.resolveSibling(jar.getFileName().toString().replace(".jar", "-javadoc.jar")), StandardCopyOption.REPLACE_EXISTING)
 		}
 	}
 
 	@Override
 	String getName() {
-		return "BTWJarReplacer";
+		return name
 	}
 
-	interface Spec extends MinecraftJarProcessor.Spec {
+	class Spec implements MinecraftJarProcessor.Spec {
+		String path
+
+		Spec(String path) {
+			this.path = path
+		}
+
+		@Override
+		int hashCode() {
+			if (!Files.exists(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip"))) {
+				return name.hashCode()
+			} else {
+				return Files.getLastModifiedTime(Paths.get(path, "build_BTW/BTW_dev/BTW_dev.zip")).hashCode() ^ name.hashCode()
+			}
+		}
 	}
 }
