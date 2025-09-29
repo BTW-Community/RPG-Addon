@@ -12,8 +12,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(HardcoreSpawnUtils.class)
 public class HardcoreSpawnUtilsMixin {
-    @Inject(method = "handleHardcoreSpawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/src/FoodStats;setFoodLevel(I)V", shift = At.Shift.AFTER))
-    private static void handleHardcoreSpawnMixin(MinecraftServer server, EntityPlayerMP oldPlayer, EntityPlayerMP newPlayer, CallbackInfo ci) {
+    @Inject(method = "onSoftRespawn", at = @At(value = "INVOKE", target = "Lnet/minecraft/src/FoodStats;setFoodLevel(I)V", shift = At.Shift.AFTER))
+    private static void handleHardcoreSpawnMixin(EntityPlayerMP oldPlayer, EntityPlayerMP newPlayer, CallbackInfo ci) {
         newPlayer.getEntityAttribute(SharedMonsterAttributes.maxHealth).setAttribute((((RPGStats) newPlayer).getModifiedMaxHealth()));
         newPlayer.setHealth(Math.min(
                 Math.max((newPlayer.getMaxHealth() * 0.5F), newPlayer.getHealth()),
