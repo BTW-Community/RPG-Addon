@@ -3,13 +3,13 @@ package btw.community.arminias.rpg;
 
 import api.AddonHandler;
 import api.BTWAddon;
+import api.network.CustomPacketHandler;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.src.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.*;
 import java.util.List;
 
 public class RPGAddon extends BTWAddon {
@@ -43,19 +43,6 @@ public class RPGAddon extends BTWAddon {
     @Override
     public void initialize() {
         AddonHandler.logMessage(this.getName() + " Version " + this.getVersionString() + " Initializing...");
-        registerPacketHandler("rpg|StatsC", (packet, player_) -> {
-            // 1.5
-            // Client-Side: You get a packet with the stats of the player
-            DataInputStream data = new DataInputStream(new ByteArrayInputStream(packet.data));
-            ((RPGStats) Minecraft.getMinecraft().thePlayer).doReinit(new RPGPointsAllocation(data));
-        });
-        registerPacketHandler("rpg|Screen", (packet, player_) -> {
-            // Client-Side: You get a packet to open the stats screen
-            EntityPlayer player;
-            Minecraft.getMinecraft().displayGuiScreen(new GuiRPGStats(Minecraft.getMinecraft().currentScreen,
-                    (player = Minecraft.getMinecraft().thePlayer) != null ? ((RPGStats) player).getAllocation() : RPGPointsAllocation.defaultAllocation(RPGPointsAllocation.DEFAULT_POINTS),
-                    true));
-        });
         AddonHandler.registerCommand(new CommandBase() {
             @Override
             public String getCommandName() {
@@ -91,6 +78,16 @@ public class RPGAddon extends BTWAddon {
             }
 
         }, false);
+
+        if (!MinecraftServer.getIsServer()) {
+            registerClientPacketHandlers();
+        }
+    }
+
+    @Environment(EnvType.CLIENT)
+    private void registerClientPacketHandlers() {
+        registerPacketHandler("rpg|StatsC", new ClientStatPacketHandler());
+        registerPacketHandler("rpg|Screen", new ClientRPGGuiPacketHandler());
     }
 
     public static void sendStatAllocationScreenToPlayer(EntityPlayerMP player) {
@@ -139,6 +136,7 @@ public class RPGAddon extends BTWAddon {
         }
     }
 
+    @Environment(EnvType.CLIENT)
     public static void sendStatAllocationToServer(RPGPointsAllocation pointsAllocation, boolean force) {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         DataOutputStream dataStream = new DataOutputStream(byteStream);
@@ -154,4 +152,26 @@ public class RPGAddon extends BTWAddon {
         return instance;
     }
 
+    @Environment(EnvType.CLIENT)
+    private static class ClientStatPacketHandler implements CustomPacketHandler {
+        @Override
+        public void handleCustomPacket(Packet250CustomPayload packet, EntityPlayer player_) throws IOException {
+            // 1.5
+            // Client-Side: You get a packet with the stats of the player
+            DataInputStream data = new DataInputStream(new ByteArrayInputStream(packet.data));
+            ((RPGStats) Minecraft.getMinecraft().thePlayer).doReinit(new RPGPointsAllocation(data));
+        }
+    }
+
+    @Environment(EnvType.CLIENT)
+    private static class ClientRPGGuiPacketHandler implements CustomPacketHandler {
+        @Override
+        public void handleCustomPacket(Packet250CustomPayload packet, EntityPlayer player_) throws IOException {
+            // Client-Side: You get a packet to open the stats screen
+            EntityPlayer player;
+            Minecraft.getMinecraft().displayGuiScreen(new GuiRPGStats(Minecraft.getMinecraft().currentScreen,
+                    (player = Minecraft.getMinecraft().thePlayer) != null ? ((RPGStats) player).getAllocation() : RPGPointsAllocation.defaultAllocation(RPGPointsAllocation.DEFAULT_POINTS),
+                    true));
+        }
+    }
 }
