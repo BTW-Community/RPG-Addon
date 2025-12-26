@@ -1,8 +1,8 @@
 package btw.community.arminias.rpg;
 
 
-import btw.AddonHandler;
-import btw.BTWAddon;
+import api.AddonHandler;
+import api.BTWAddon;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.src.*;
 

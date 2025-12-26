@@ -4,7 +4,7 @@ import btw.community.arminias.rpg.FoodStatsExtension;
 import btw.community.arminias.rpg.RPGAddon;
 import btw.community.arminias.rpg.RPGPointsAllocation;
 import btw.community.arminias.rpg.RPGStats;
-import btw.util.status.StatusEffect;
+import api.util.status.StatusEffect;
 import net.minecraft.src.*;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -29,6 +29,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements RPGS
     @Unique
     private int cachedShanks = 0;
 
+    @Unique
     private RPGPointsAllocation pointsAllocation = null;
 
     private EntityPlayerMixin(World par1World) {
@@ -165,6 +166,7 @@ public abstract class EntityPlayerMixin extends EntityLivingBase implements RPGS
     }
 
     // Gets health normalized to 0-20
+    @Unique
     private float getNormalizedHealth() {
         return (20F / Math.min(getMaxHealth(), 20F)) * this.getHealth();
     }

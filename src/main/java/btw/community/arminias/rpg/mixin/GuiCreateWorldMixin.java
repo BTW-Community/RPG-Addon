@@ -29,13 +29,13 @@ public abstract class GuiCreateWorldMixin extends GuiScreen implements SettableR
     @Inject(method = "initGui", at = @At("RETURN"))
     public void initGuiInject(CallbackInfo ci) {
         //RPGAddon.pointsAllocation = null;
-        this.buttonRPGStats = new GuiButton(73, 8, 60, 98, 20, "RPG Stats");
+        this.buttonRPGStats = new GuiButton(74, 8, 60, 98, 20, "RPG Stats");
         this.buttonList.add(this.buttonRPGStats);
     }
 
     @Inject(method = "actionPerformed", at = @At("HEAD"))
     public void actionPerformedInject(GuiButton button, CallbackInfo ci) {
-        if (button.id == 73) {
+        if (button.id == 74) {
             this.mc.displayGuiScreen(new GuiRPGStats(this, allocation));
         }
     }

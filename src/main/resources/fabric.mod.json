@@ -4,13 +4,12 @@
   "version": "${version}",
 
   "name": "RPG Addon",
-  "description": "This is an example description! Tell everyone what your mod is about!",
+  "description": "Spice up your game with your personal playstyles!",
   "authors": [
     "Arminias"
   ],
   "contact": {
-    "homepage": "https://fabricmc.net/",
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "sources": "https://github.com/BTW-Community/RPG-Addon"
   },
 
   "license": "CC-BY-NC-4.0",
